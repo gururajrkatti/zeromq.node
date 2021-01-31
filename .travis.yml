@@ -12,6 +12,9 @@ addons:
     - gcc-4.9
     - g++-4.9
     - uuid-dev
+    - libtool-bin
+    - libc6
+    - libc6-dev
 
 language: node_js
 
@@ -51,19 +54,45 @@ before_install:
  - make install
  - cd ..
 
+# Travis is by default running "nvm install 0.10" which is not supported on ppc64le. 
+# Hence including these as separate matrix.
+install:  skip
+jobs:
+   include:
+     - arch: ppc64le
+       node_js: 4
+       env: ZMQ="2.2.0" ZMQ_REPO="zeromq2-x"
+     - arch: ppc64le
+       node_js: 6
+       env: ZMQ="3.2.5" ZMQ_REPO="zeromq3-x"
+     - arch: ppc64le
+       node_js: 8
+       env: ZMQ="4.0.8" ZMQ_REPO="zeromq4-x" SODIUM="1.0.5"
+     - arch: ppc64le
+       node_js: 10
+       env: ZMQ="4.1.5" ZMQ_REPO="zeromq4-1" SODIUM="1.0.5"
+     - arch: ppc64le
+       node_js: 12  # node 14 onwards are giving npm install error wrt binding. Hence including only upto this
+       env: ZMQ="4.1.5" ZMQ_REPO="zeromq4-1" SODIUM="1.0.5"
 script:
-  - nvm install 0.10
-  - npm install
-  - travis_retry npm test
-  - nvm install 0.12
-  - npm install
-  - travis_retry npm test
-  - nvm install 4
-  - npm install
-  - travis_retry npm test
-  - nvm install 5
-  - npm install
-  - travis_retry npm test
-  - nvm install 6
-  - npm install
-  - travis_retry npm test
+ - |
+   if [[ "$TRAVIS_CPU_ARCH" != "ppc64le" ]]; then
+     nvm install 0.10
+     npm install
+     travis_retry npm test
+     nvm install 0.12
+     npm install
+     travis_retry npm test
+     nvm install 4
+     npm install
+     travis_retry npm test
+     nvm install 5
+     npm install
+     travis_retry npm test
+     nvm install 6
+     npm install
+     travis_retry npm test
+   else
+     npm install
+     travis_retry npm test
+   fi
